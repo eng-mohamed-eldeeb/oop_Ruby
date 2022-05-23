@@ -1,6 +1,6 @@
 # suberclass
 class Person
-  def initialize(age, name = 'unkown', parent_permission: true)
+  def initialize(id, age, name = 'unkown', parent_permission = true)
     @id = id
     @name = name
     @age = age
