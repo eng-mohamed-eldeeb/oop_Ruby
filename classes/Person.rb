@@ -1,3 +1,4 @@
+# suberclass
 class Person
   def initialize(age, name = 'unkown', parent_permission: true)
     @id = id
