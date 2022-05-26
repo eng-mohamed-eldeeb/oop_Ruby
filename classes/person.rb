@@ -1,5 +1,6 @@
+require_relative 'nameable'
 # suberclass
-class Person
+class Person < Nameable
   def initialize(id, age, name = 'unkown', parent_permission: true)
     @id = id
     @name = name
