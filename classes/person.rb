@@ -2,7 +2,7 @@ require_relative 'nameable'
 # suberclass
 class Person < Nameable
   def initialize(_id, age, name = 'unkown', parent_permission: true)
-    super
+    super()
     @nameable = Nameable.new
     @id = Random.rand(1..1000)
     @name = name
