@@ -1,7 +1,10 @@
 require_relative 'book'
+require_relative 'person'
 require_relative 'student'
 require_relative 'teacher'
-require_relative 'rental'
+require_relative 'classroom'
+require_relative 'capitalize_decorator'
+require_relative 'trimmer_decorator'
 
 class App
   attr_accessor :books, :people, :rentals
@@ -10,121 +13,87 @@ class App
     @people = []
     @books = []
     @rentals = []
+    @classroom = Classroom.new('1-A')
   end
 
-  def list_all_books
-    puts "\n"
+  def select_book
+    puts 'Select a book'
     @books.each_with_index do |book, index|
-      puts "#{index + 1} Title: #{book.title}, Author: #{book.author}"
+      puts "> #{index + 1}) Title: #{book.title} Author: #{book.author} "
     end
+    gets.chomp.to_i
   end
 
-  def list_all_people
-    puts "\n"
+  def select_person
+    puts 'Select a person'
     @people.each_with_index do |person, index|
-      puts "#{index + 1} [#{person.class}] Name: #{person.name}, ID: #{person.id}, Age: #{person.age}"
+      print "> #{index + 1}) #{person.is_a?(Teacher) ? '[Teacher]' : '[Student]'} "
+      puts "> Name: #{person.name}, ID: #{person.id}, Age: #{person.age}"
     end
+    gets.chomp.to_i
   end
 
-  def create_student
-    print 'Age: '
-    student_age = gets.chomp.to_i
-    print 'Name: '
-    student_name = gets.chomp
-    print 'Has parent permission? [Y/N]: '
-    permission_response = gets.chomp
-    student_permission = permission_response != 'N'
-
-    new_student = Student.new(student_age, student_name, parent_permission: student_permission)
-    puts 'Person created succesfully' if new_student.instance_of?(Student)
-    people << new_student unless people.include?(new_student)
-  end
-
-  def create_teacher
-    print 'Age: '
-    teacher_age = gets.chomp.to_i
-    print 'Name: '
-    teacher_name = gets.chomp
-    print 'Specialization: '
-    teacher_specialization = gets.chomp
-
-    new_teacher = Teacher.new(teacher_specialization, teacher_age, teacher_name)
-    puts 'Person created succesfully' if new_teacher.instance_of?(Teacher)
-    people << new_teacher unless people.include?(new_teacher)
-  end
-
-  def create_person
-    print 'Do you want to create a student (1) or a teacher (2)? [Input the number]: '
-    person_selection = gets.chomp.to_i
-    case person_selection
-    when 1
-      create_student
-    when 2
-      create_teacher
-    else
-      puts 'Wrong value. Please try again :)'
+  def can_create_rental?
+    if @books.empty?
+      puts '> No items to show, add a book.'
+      return false
     end
+    if @people.empty?
+      puts '> No names on the list'
+      return false
+    end
+    true
   end
 
-  def create_book
-    print 'Title: '
-    book_title = gets.chomp
-    print 'Author: '
-    book_author = gets.chomp
-
-    new_book = Book.new(book_title, book_author)
-    puts 'Book created successfully' if new_book.instance_of?(Book)
-    books << new_book unless books.include?(new_book)
-  end
-
-  def create_rental
-    puts "\nSelect a book from the following list by number:"
-    list_all_books
-    selected_book_index = gets.chomp.to_i
-    selected_book = books[selected_book_index - 1]
-
-    puts "\nSelect a person from the following list by number (not id):"
-    list_all_people
-    selected_person_index = gets.chomp.to_i
-    selected_person = people[selected_person_index - 1]
-
-    print 'Date: '
-    rental_date = gets.chomp
-
-    new_rental = Rental.new(rental_date, selected_person, selected_book)
-    puts 'Rental created successfully' if new_rental.instance_of?(Rental)
-    rentals << new_rental unless rentals.include?(new_rental)
-    selected_person.rentals << new_rental unless selected_person.rentals.include?(new_rental)
-    selected_book.rentals << new_rental unless selected_book.rentals.include?(new_rental)
+  def create_rental(date, index_person, index_book)
+    @rentals.push(Rental.new(date, @people[index_person], @books[index_book]))
   end
 
   def list_rentals_by_id
-    list_all_people
+    if @rentals.empty?
+      puts '> No Rentals to show'
+      return
+    end
     print 'ID of person: '
-    selected_person_id = gets.chomp.to_i
-    selected_person = people.select { |person| person.id == selected_person_id }
-    puts 'Rentals: '
-    selected_person[0].rentals.each do |rental|
-      puts "Date: #{rental.date}, Book: #{rental.book.title}, Person: #{rental.person.name}"
+    id = gets.chomp
+    puts 'Rentals'
+    @rentals.each do |rental|
+      if rental.person.id == id.to_i
+        print("Date: #{rental.date} ")
+        puts("Book \"#{rental.book.title}\" by #{rental.book.author} ")
+      end
     end
   end
 
-  def option_run(input)
-    case input
-    when 1
-      list_all_books
-    when 2
-      list_all_people
-    when 3
-      create_person
-    when 4
-      create_book
-    when 5
-      create_rental
-    when 6
-      list_rentals_by_id
-    else
-      puts 'Wrong value. Verify selection'
+  def add_book(title, author)
+    @books.push(Book.new(title, author))
+  end
+
+  def list_all_books
+    if @books.empty?
+      puts '> There are no books to show'
+      return
     end
+    @books.each { |book| puts "> Title: #{book.title} by Author: #{book.author}" }
+  end
+
+  def list_all_people
+    if @people.empty?
+      puts 'No entries. Add one.'
+      return
+    end
+    @people.each do |person|
+      print '[Teacher] ' if person.is_a?(Teacher)
+      print '[Student] ' if person.is_a?(Student)
+      puts "> Name: #{person.name}, ID: #{person.id}, Age: #{person.age}"
+    end
+  end
+
+  def add_teacher(age, name, specialization)
+    @people.push(Teacher.new(age, specialization, name))
+  end
+
+  def add_student(age, name, permission)
+    @people.push(Student.new(age, @classroom, name, parent_permission: permission))
   end
 end
